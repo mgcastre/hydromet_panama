@@ -1,0 +1,80 @@
+---
+title: "Hydrometeorological Data from ETESA"
+author: "M. G. Castrellon"
+date: "June 16th, 2019"
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+  html_notebook:
+    code_folding: hide
+    fig_caption: yes
+    highlight: kate
+    theme: paper
+    toc: yes
+---
+
+The Purpose of this document is to illustrate the data exploration and cleaning process that I do to prepare the Panamanian hydrometeorological data from ETESA to be used in different applications such as ET estimation and hydrological modeling. The raw data from ETESA's Department of hydrometeorology can be donwloaded from their open data online portal (http://hidromet.com.pa/open_data.php). The data is open and public, but the site requires the user to register previous to access the data.
+
+```{r setup, warning=FALSE, message=FALSE}
+# Required Libraries
+library(tidyverse)
+library(lubridate)
+
+# Load Functions
+source("ETESA_Functions.R")
+```
+
+# Data Exploration
+
+The first thing to do with ETESA Data is to identify and assign the missing data, because what they usually do is skip the date and times when there is no data. In the the function ``AssignMissingValues()`` was built to identify gaps missing dates in the data and assign missing values.
+
+```{r}
+# Load Data
+file_path <- "C:/Users/Gaby/Dropbox/UTP/Proyecto_Estibana/Datos/ETESA/RawData"
+file_list <- list.files(path = file_path, pattern = "*.csv", full.names = TRUE)
+RawData <- do.call(rbind,lapply(file_list, function(x){read.csv(x, skip = 1)}))[,1:9]
+colnames(RawData) <- c("Station","Year","Month","Day","Hour","Sensor","Value","Unit","Quality")
+
+# Create "Date" Column
+RawData %>% 
+  mutate(Date = ymd_h(paste(Year,Month,Day,Hour,sep="-"))) %>% 
+  select(Date, everything()) %>% 
+  arrange(Station, Sensor, Sensor) -> RawData
+
+# Assign Missing Data
+NewData <- RawData %>% 
+  nest(-Sensor, -Station, -Unit) %>% 
+  mutate(Sensor = as.factor(c("ET","Humidity","Radiation","Temperature","Wind_10m")),
+         Unit = as.factor(c("mm","%","W/m2","Celsius","m/s")),
+         Station = as.factor(Station)) %>% 
+  mutate(data = map(data, function(x){AssignMissingValues(Data_Table = x, Freq = "H")}),
+         Quality = NA) %>% 
+  unnest() %>% 
+  select(Station,Date,Year,Month,Day,Hour,Sensor,Value,Unit,Quality)
+
+# Plot Missing Data
+NewData %>% 
+  mutate(Missing = is.na(Value)) %>% 
+  ggplot() + theme_light() + ggtitle("Missing Data for Macaracas 2 Station 128-017") +
+  geom_point(mapping = aes(x = Date, y = Sensor, color = Missing), size = 3) +
+  scale_color_manual(name = "NA", values = c('FALSE' = 'green','TRUE'='red'))
+```
+
+# Data Location
+
+The location of ETESA stations can be found [here](http://hidromet.com.pa/estaciones_meteo.php). The coordinates for the Macaracas 2 Station (128-017) are the following [link](http://hidromet.com.pa/estaciones_meteo.php?f_cuenca=noopcion&f_status=noopcion&f_institucion=noopcion&f_latitud_1=&f_latitud_2=&f_longitud_1=&f_longitud_2=&f_provincia=noopcion&f_distrito=noopcion&f_corregimiento=noopcion&f_nombre=Macaracas+2&button=Filtrar).
+
+**Name**    | **Code** | **Lat**     | **Long**    | **Elevation** 
+------------|:--------:|:-----------:|:-----------:|:-------------:
+Macaracas 2 | 128-017  |7° 44' 37"   |80° 33' 09"  |95 m           
+
+```{r}
+# Saving Data
+for (sn in c("ET","Humidity","Radiation","Temperature","Wind_10m")) {
+  NewData %>% 
+    filter(Sensor == sn) %>% 
+    write.csv(paste0("cleaned_data/128017_",sn,"_Hourly.csv"), row.names = FALSE)
+}
+```
+
