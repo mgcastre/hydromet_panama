@@ -12,6 +12,8 @@ output:
     highlight: kate
     theme: paper
     toc: yes
+  md_document:
+    variant: markdown_github
 ---
 
 The Purpose of this document is to illustrate the data exploration and cleaning process that I do to prepare the Panamanian hydrometeorological data from ETESA to be used in different applications such as ET estimation and hydrological modeling. The raw data from ETESA's Department of hydrometeorology can be donwloaded from their open data online portal (http://hidromet.com.pa/open_data.php). The data is open and public, but the site requires the user to register previous to access the data.
