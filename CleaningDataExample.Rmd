@@ -71,10 +71,11 @@ Macaracas 2 | 128-017  |7° 44' 37"   |80° 33' 09"  |95 m
 
 ```{r}
 # Saving Data
+file_path <- "C:/Users/Gaby/Dropbox/UTP/Proyecto_Estibana/Datos/ETESA/CleanedData"
 for (sn in c("ET","Humidity","Radiation","Temperature","Wind_10m")) {
   NewData %>% 
     filter(Sensor == sn) %>% 
-    write.csv(paste0("cleaned_data/128017_",sn,"_Hourly.csv"), row.names = FALSE)
+    write.csv(paste0(file_path,"/128017_",sn,"_Hourly.csv"), row.names = FALSE)
 }
 ```
 
