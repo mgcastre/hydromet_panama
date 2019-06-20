@@ -33,7 +33,7 @@ The first thing to do with ETESA Data is to identify and assign the missing data
 
 ```{r}
 # Load Data
-file_path <- "C:/Users/Gaby/Dropbox/UTP/Proyecto_Estibana/Datos/ETESA/RawData"
+file_path <- "C:/Users/mgcastre/Dropbox/UTP/Proyecto_Estibana/Datos/ETESA/RawData"
 file_list <- list.files(path = file_path, pattern = "*.csv", full.names = TRUE)
 RawData <- do.call(rbind,lapply(file_list, function(x){read.csv(x, skip = 1)}))[,1:9]
 colnames(RawData) <- c("Station","Year","Month","Day","Hour","Sensor","Value","Unit","Quality")
@@ -71,13 +71,60 @@ The location of ETESA stations can be found [here](http://hidromet.com.pa/estaci
 ------------|:--------:|:-----------:|:-----------:|:-------------:
 Macaracas 2 | 128-017  |7° 44' 37"   |80° 33' 09"  |95 m           
 
+
 ```{r}
-# Saving Data
+# Saving Hourly Data
 file_path <- "C:/Users/Gaby/Dropbox/UTP/Proyecto_Estibana/Datos/ETESA/CleanedData"
 for (sn in c("ET","Humidity","Radiation","Temperature","Wind_10m")) {
   NewData %>% 
     filter(Sensor == sn) %>% 
     write.csv(paste0(file_path,"/128017_",sn,"_Hourly.csv"), row.names = FALSE)
 }
+```
+
+# CMIS Like Data
+
+In this section I am reorgazing the data to follow the CIMIS format and also generate daily time series for the hourly time series data.
+
+## CIMIS Format
+```{r}
+# Output Data
+file_path <- "C:/Users/mgcastre/Dropbox/UTP/Proyecto_Estibana/Datos/ETESA"
+
+# Writing Data
+NewData %>% 
+  mutate(StationID = Station, 
+         StationName = "Macaracas 2",
+         Region = "Azuero",
+         DateTime = Date,
+         Date = date(DateTime),
+         Jul = NA) %>% 
+  select(StationID, StationName, Region, Date, Hour, Jul, Sensor, Value) %>% 
+  spread(key = Sensor, value = Value) %>% 
+  write.csv(paste0(file_path,"/Macaracas_All_Hourly.csv"), row.names = FALSE)
+```
+
+## Daily Data
+```{r}
+# Output Data
+file_path <- "C:/Users/mgcastre/Dropbox/UTP/Proyecto_Estibana/Datos/ETESA"
+
+# Writing Data
+NewData %>% 
+  mutate(Date = date(Date)) %>% 
+  spread(key = Sensor, value = Value) %>% 
+  group_by(Station, Date) %>% 
+  summarise(ET = sum(ET, na.rm = TRUE),
+            Humidity = mean(Humidity, na.rm = TRUE),
+            Radiation = mean(Radiation, na.rm = TRUE),
+            Temperature = mean(Temperature, na.rm = TRUE),
+            Wind_10m = mean(Wind_10m, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  mutate(StationID = Station, 
+         StationName = "Macaracas 2",
+         Region = "Azuero",
+         Jul = NA) %>%
+  select(StationID, StationName, Region, Date, Jul, ET, Radiation, Temperature, Wind_10m) %>% 
+  write.csv(paste0(file_path,"/Macaracas_All_Daily.csv"), row.names = FALSE)
 ```
 
