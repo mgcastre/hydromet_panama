@@ -1,2 +1,2 @@
 # datos_etesa
-Specialized functions to analyze hydrometeorological data from Panama publsihed and maintained by ETESA.
+Web scraping tool to obtain hydrometeorological data from Panama pusblised and maintained by ETESA. This tool also includes specialized functions to analyze such data.
