@@ -1,0 +1,31 @@
+---
+title: "Obtain Data from Hidromet Website"
+author: "M. G. Castrellon"
+date: "September 22, 2021"
+---
+
+```{r global}
+# Load libraries
+library(rvest)
+
+# Define main url
+main_url <- "https://www.hidromet.com.pa/es/datos-diarios"
+```
+
+As quick inspection to the URL's structure, it is required to specify the station, the year and the month from which we want to obtain the data. As a quick example, we will look at data from Los Santos (station # 9 in this list) and we will download data from January 2012.
+
+```{r}
+# Define function to create url
+createURL <- function(base_url, station, month, year){
+  ### This function creates the url to obtain data from the given station, month and year. The structure of the url is as follows:
+  ### https://www.hidromet.com.pa/es/datos-diarios?estacion=9&mes=1&ano=2012, where the variables estacion, mes and ano will change
+  ### depending on the desired station, month and year.
+  u <- paste0(base_url,'?estacion=',station,'&mes=',month,'&ano=',year)
+  return(u)
+}
+
+url_path <- createURL(main_url, station=9, month=1, year=2012)
+test <- read_html(url_path)
+test[[2]]
+```
+
